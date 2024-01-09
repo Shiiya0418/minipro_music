@@ -5,6 +5,9 @@ from miditok import REMI, TokenizerConfig, Octuple
 from miditok.pytorch_data import DatasetTok, DataCollator
 from tqdm import tqdm
 
+import importlib
+midi_preprocessor = importlib.import_module("midi-preprocessor.preprocessor")
+
 from typing import Dict, List
 
 def make_REMI(tokenizer_params: Dict=None):
