@@ -3,3 +3,5 @@ lmd_*
 o
 genre_tables
 msd_*
+*/__pycache__/*
+*/.DS_store
