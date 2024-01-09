@@ -37,6 +37,7 @@ OctupleMIDI output path: lmd_matched_octuple
 ## REMI の前処理
 以下のコマンドを実行する。
 
+
 # 参考
 - [microsft/muzic/musicbert](https://github.com/microsoft/muzic/tree/main/musicbert)
 - [Miditok](https://miditok.readthedocs.io/en/latest/)
