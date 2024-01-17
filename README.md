@@ -36,7 +36,10 @@ OctupleMIDI output path: lmd_matched_octuple
 
 ## REMI の前処理
 以下のコマンドを実行する。
-
+```
+python preprocess/midi_to_remi.py
+```
+すると、 `lmd_matched_REMI` にいっぱいREMI+形式に変換されたjsonファイルがいっぱいできる。
 
 # 参考
 - [microsft/muzic/musicbert](https://github.com/microsoft/muzic/tree/main/musicbert)
