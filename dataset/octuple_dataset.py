@@ -1,5 +1,6 @@
 from typing import List
 
+import pickle
 from torch.utils.data import Dataset, DataLoader
 
 from ..preprocess.octuple_process import *
@@ -18,7 +19,7 @@ class OctupleDataset(Dataset):
 
     def __getitem__(self, index: int) -> List[int]:
         with open(self.dataset_paths[index], 'r') as f:
-            item_str = f.readline()
+            item_str = pickle.load(f)
         item_splited = item_str.split()
         return [self.octuple_to_id(item) for item in item_splited]
 
