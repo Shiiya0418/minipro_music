@@ -16,7 +16,7 @@ class OctupleDataset(Dataset):
         self.dataset_paths = dataset_paths
         self.get_octuple_dict(dict_path)
 
-    def get_octuple_dict(self, dict_path: str='dict.txt'):
+    def get_octuple_dict(self, dict_path: str='octuple_dict.txt'):
         with open(dict_path, 'r') as f:
             octuples = ['<s>', '</s>', '<pad>'] + [e.replace('\n', '') for e in f.readlines()]
         self.id_to_octuple = octuples
@@ -28,16 +28,14 @@ class OctupleDataset(Dataset):
         # なんか最後の '</s>' が抜けてたので、補完
         item_splited = item_str.split() + ['</s>']
         # idに直してtorch.Tensorを作る -> 8つ組に整形 [2~1002, 8]
-        oct_elem = torch.Tensor([self.octuple_to_id[item] for item in item_splited]).reshape(int(len(item_splited)), 8)
+        oct_elem = torch.Tensor([self.octuple_to_id[item] for item in item_splited]).reshape(int(len(item_splited)/8), 8)
         # それぞれの属性の開始idxを引くことで、どの属性も0スタートにする（Embedding用）
         sdx = START_IDXS.repeat(oct_elem.shape[0], 1)
         # ただし、頭とケツはsなので引かない
         sdx[0] = torch.zeros(8)
         sdx[-1] = torch.zeros(8)
         octuple = oct_elem - sdx
-        # 転置して渡す([8, length]) にする。Embeddingするときに、それぞれの属性で別々のLinear層を通すため=属性ごとにユニット数が異なるため
-        # [length, 8] だと out of index error?かなんかがでちゃう
-        octuple = octuple.to(dtype=torch.int64).T
+        octuple = octuple.to(dtype=torch.int64)
         target = octuple[1:]
         return octuple, target
 
@@ -45,13 +43,18 @@ class OctupleDataset(Dataset):
         return len(self.dataset_paths)
 
 def collate_fn(batch):
+    # batch処理を行う時に、長さをそろえるためのやつ
     octuple, target = list(zip(*batch))
     octuple = torch.nn.utils.rnn.pad_sequence(octuple, batch_first=True, padding_value=2)
-    target = torch.nn.utils.rnn.pad_sequence(target, batch_first=True, paddin_value=2)
-    return x, target
+    target = torch.nn.utils.rnn.pad_sequence(target, batch_first=True, padding_value=2)
+    return octuple, target
 
 if __name__ == "__main__":
     import glob
-    file_list = glob.glob('lmd_matched_octuple_pickle/**/*.pkl', recursive=True)
-    dataloader = DataLoader(file_list, batch_size=8, collate_fn=collate_fn)
-    print(file_list[0])
+    # file_list = glob.glob('lmd_matched_octuple_pickle/**/*.pkl', recursive=True)
+    file_list = glob.glob('lmd_matched_octuple_pickle/0a0dadc29a6ad3bec746c8b5af9c41cd/*.pkl', recursive=True)
+    dataset = OctupleDataset(file_list)
+    dataloader = DataLoader(dataset, batch_size=4, collate_fn=collate_fn)
+    for x, t in dataloader:
+        print(x)
+        break
