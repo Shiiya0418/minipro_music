@@ -37,17 +37,21 @@ class OctupleDataset(Dataset):
         octuple = oct_elem - sdx
         # 転置して渡す([8, length]) にする。Embeddingするときに、それぞれの属性で別々のLinear層を通すため=属性ごとにユニット数が異なるため
         # [length, 8] だと out of index error?かなんかがでちゃう
-        return octuple.to(dtype=torch.int64).T
+        octuple = octuple.to(dtype=torch.int64).T
+        target = octuple[1:]
+        return octuple, target
 
     def __len__(self) -> int:
         return len(self.dataset_paths)
 
 def collate_fn(batch):
-    x = torch.nn.utils.rnn.pad_sequence(batch, batch_first=True, padding_value=2)
-    return x
-    pass
+    octuple, target = list(zip(*batch))
+    octuple = torch.nn.utils.rnn.pad_sequence(octuple, batch_first=True, padding_value=2)
+    target = torch.nn.utils.rnn.pad_sequence(target, batch_first=True, paddin_value=2)
+    return x, target
 
 if __name__ == "__main__":
     import glob
     file_list = glob.glob('lmd_matched_octuple_pickle/**/*.pkl', recursive=True)
+    dataloader = DataLoader(file_list, batch_size=8, collate_fn=collate_fn)
     print(file_list[0])
