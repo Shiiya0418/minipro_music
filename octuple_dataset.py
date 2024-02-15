@@ -1,14 +1,15 @@
 import pickle
 import sys
-from typing import List
+from typing import List, Tuple
 
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from preprocess.octuple_process import *
+# from preprocess.octuple_process import *
 
 # すべての属性に<s>, </s>, <pad> を入れるので、3つ分足したうえで、各属性値のスタートidxを計算する
 START_IDXS = torch.Tensor([-3, 259-3, 387-3, 516-3, 772-3, 900-3, 932-3, 1186-3])
+PAD_NUM = 2
 
 class OctupleDataset(Dataset):
     def __init__(self, dataset_paths: List[str], dict_path: str='octuple_dict.txt'):
@@ -22,7 +23,7 @@ class OctupleDataset(Dataset):
         self.id_to_octuple = octuples
         self.octuple_to_id = {octuple: i for i, octuple in enumerate(self.id_to_octuple)}
 
-    def __getitem__(self, index: int) -> List[int]:
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         with open(self.dataset_paths[index], 'rb') as f:
             item_str = pickle.load(f)
         # なんか最後の '</s>' が抜けてたので、補完
@@ -45,8 +46,10 @@ class OctupleDataset(Dataset):
 def collate_fn(batch):
     # batch処理を行う時に、長さをそろえるためのやつ
     octuple, target = list(zip(*batch))
-    octuple = torch.nn.utils.rnn.pad_sequence(octuple, batch_first=True, padding_value=2)
-    target = torch.nn.utils.rnn.pad_sequence(target, batch_first=True, padding_value=2)
+    octuple = torch.nn.utils.rnn.pad_sequence(octuple, batch_first=True, padding_value=2).permute(0, 2, 1)
+    target = torch.nn.utils.rnn.pad_sequence(target, batch_first=True, padding_value=2).permute(0, 2, 1)
+    pad = torch.full((target.shape[0], target.shape[1], 1), fill_value=PAD_NUM)
+    target = torch.cat((target, pad), dim=2)
     return octuple, target
 
 if __name__ == "__main__":
