@@ -58,10 +58,11 @@ class OctupleTransformer(nn.Module):
                 # [batch_size(1), 8, 1]
                 octuple = torch.stack(octuple).unsqueeze(0)
                 generated = torch.cat((generated, octuple), dim=2)
-                if end_symbol in octuple:
+                if end_symbol in octuple or 2 in octuple:
                     break
             for j in range(8):
                 generated[0][j][-1] = end_symbol
+        # [batch_size(1), 8, length]
         return generated
                 
             

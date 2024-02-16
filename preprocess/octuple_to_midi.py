@@ -8,7 +8,7 @@ import itertools
 from miditoolkit import MidiFile
 warnings.simplefilter('ignore')
 
-import midi_to_octuple as preprocess
+import preprocess.midi_to_octuple as mto
 
 BOS_NUM = 0
 BOS_VALUE = '<s>'
@@ -44,11 +44,12 @@ def octuple_to_midi(
     for i in range(0, len(octuple_tune), 8):
         oct_note = ' '.join(octuple_tune[i: i+8])
         try:
-             notes.append(preprocess.str_to_encoding(oct_note))
+            print(oct_note)
+            notes.append(mto.str_to_encoding(oct_note))
         except AssertionError:
             print(f'{oct_note}: AssersionError')
     print(f'notes {len(notes)}')
     octuple_tune = list(itertools.chain.from_iterable(notes))
     print(f'octuple_tune {len(octuple_tune)}')
-    midi_tune = preprocess.encoding_to_MIDI(octuple_tune)
+    midi_tune = mto.encoding_to_MIDI(octuple_tune)
     return midi_tune
