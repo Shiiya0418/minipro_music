@@ -18,6 +18,7 @@ class OctupleTransformer(nn.Module):
                  n_layers: int=6,
                  dropout: float=0.5):
         super(OctupleTransformer, self).__init__()
+        self.device = device
         self.octuple_embedding = OctupleEmbedding(d_embed=d_embed)
         self.transformer_decoder = OctupleTransformerDecoder(
             device=device, d_model=d_model, d_feedforward=d_feedforward, n_head=n_head, n_layers=n_layers, dropout=dropout
@@ -33,4 +34,35 @@ class OctupleTransformer(nn.Module):
         # よって、[[BATCH, 255], [BATCH, 127], ..., [BATCH, 48]]
         # みたいな感じ
         return octuples
+    
+    def greedy_decode(self,
+                      max_len: int=1002,
+                      start_symbol: int=0,
+                      end_symbol: int=1):
+        # batch_size = 1に限定する
+        self.eval()
+        with torch.no_grad():
+            # [batch_size, 8(octuple), 1(length)]
+            generated = torch.ones((1, 8, 1)).fill_(start_symbol).to(device=self.device, dtype=torch.int64)
+            for i in range(max_len - 1):
+                out = self(generated)
+                octuple = []
+                # [8, batch_size(1), length, vocab_size]
+                for o in out:
+                    # [batch_size(1), length]
+                    o = o.argmax(dim=2)
+                    # [batch_size(1), 1] 末尾のデータ（次のトークン）を獲得
+                    next_word = o.data[:, -1]
+                    # octupleのリストに格納
+                    octuple.append(next_word)
+                # [batch_size(1), 8, 1]
+                octuple = torch.stack(octuple).unsqueeze(0)
+                generated = torch.cat((generated, octuple), dim=2)
+                if end_symbol in octuple:
+                    break
+            for j in range(8):
+                generated[0][j][-1] = end_symbol
+        return generated
+                
+            
 
